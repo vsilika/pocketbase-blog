@@ -8,7 +8,6 @@ export const useBlogerStore = create()(
     persist(
       (set) => ({
         ...accountSlice(set),
-
       }),
       {
         name: "bloger-store",

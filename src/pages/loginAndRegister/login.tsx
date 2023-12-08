@@ -1,6 +1,6 @@
-import { useState } from 'react';
 //@ts-expect-error
 import pb from '../../lib/pocketbase';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../../App.scss";
 import { useBlogerStore } from '../../store';
@@ -15,15 +15,16 @@ const Login = () => {
   const handleLogin = async (e: any) => {
     e.preventDefault()
     try {
-      const authData = await pb
+      const response = await pb
         .collection("users")
         .authWithPassword(username, password)
-      navigation('/posts')
-      store.accountDataAll(authData)
+      if (response.token !== undefined && response.token !== null && response.token !== '') {
+        store.accountDataAll(response)
+        navigation('/posts')
+      }
     } catch (error) {
-      // console.log(error)
+      console.log(error)
     }
-
   }
 
   return (
