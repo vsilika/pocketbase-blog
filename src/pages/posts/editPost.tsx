@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 //@ts-expect-error
 import pb from '../../lib/pocketbase';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 
 
 const EditPosts = () => {
@@ -13,21 +14,22 @@ const EditPosts = () => {
   const [subtitle, setSubtitle] = useState<string>(selectedPost?.subtitle ?? "")
   const [blogText, setBlogText] = useState<string>(selectedPost?.blogText ?? "")
 
-
-  const getPost = async () => {
-    try {
-      const post = await await pb.collection('post').getOne(id)
-      setSelectedPost(post)
+  const { isLoading } = useQuery({
+    queryKey: ['post'],
+    queryFn: async () => {
+      if (!id) return
+      try {
+        const response = await await pb.collection('post').getOne(id)
+        if (response !== undefined && response !== null && response !== '') setSelectedPost(response)
+        if (!response.ok) { throw new Error('Network response was not ok')}
+        return response ?? [];
+      }
+      catch (error) {
+        console.log(error)
+      }
     }
-    catch (error) {
-      console.log(error)
-    }
-  }
+  })
 
-  useEffect(() => {
-    if(!id) return
-    getPost()
-  }, [])
 
   useEffect(() => {
     setTitle(selectedPost?.title ?? "");
@@ -54,6 +56,8 @@ const EditPosts = () => {
       console.log(error)
     }
   }
+
+  if (isLoading) return <div>Loading...</div>
 
   return (
     <div className="create-edit-post container">

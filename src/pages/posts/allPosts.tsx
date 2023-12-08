@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react';
+import {
+  useQuery
+} from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../../App.scss";
 //@ts-expect-error
@@ -8,39 +11,39 @@ import PostCard from './components/postCard';
 const Posts = () => {
   const navigate = useNavigate()
   const [posts, setPosts] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  // const store: any = useBlogerStore()
-
-
-  const getBlogs = async () => {
-    try {
-      const posts = await pb
-        .collection("post")
-        .getFullList()
-      setPosts(posts)
-      setIsLoading(false)
-    } catch (error) {
-      console.log(error)
+  
+  const { isLoading } = useQuery({
+    queryKey: ['posts'],
+    queryFn: async () => {
+      try {
+        const response = await pb
+          .collection("post")
+          .getFullList()
+        if (response.length > 0) {
+          setPosts(response)
+        }
+        if (!response.ok) {
+          throw new Error('Network response was not ok')
+        }
+        return response ?? [];
+      } catch (error) {
+        console.log(error)
+      }
     }
-  }
+  })
 
-  useEffect(() => {
-    getBlogs()
-  }, [])
-
+  
   const handleDeletePost = async (id: string) => {
-    setIsLoading(true)
     try {
       const post = await pb
-        .collection("post")
-        .delete(id)
-      getBlogs()
-      setIsLoading(false)
+      .collection("post")
+      .delete(id)
     } catch (error) {
-      setIsLoading(false)
       console.log(error)
     }
   }
+  
+  if (isLoading) return <div>Loading...</div>
 
   return (
     <div className="container">
@@ -49,23 +52,20 @@ const Posts = () => {
         <button onClick={() => navigate('/create-post')}>Create post</button>
       </div>
       <div className='post-card-container'>
-        {
-          isLoading ? <h1>Loading...</h1>
-            : posts.slice().reverse().map((post: any) => {
-              return (
-                <PostCard
-                  key={post.id}
-                  title={post?.title}
-                  author={post?.author ?? "Unknown author"}
-                  subtitle={post?.subtitle}
-                  blogText={post?.blogText}
-                  id={post?.id}
-                  onDelete={handleDeletePost}
-                  onEdit={() => navigate(`/edit-post/${post?.id}`)}
-                />
-              )
-            }
-            )
+        {posts?.slice().reverse().map((post: any) => {
+          return (
+            <PostCard
+              key={post.id}
+              title={post?.title}
+              author={post?.author ?? "Unknown author"}
+              subtitle={post?.subtitle}
+              blogText={post?.blogText}
+              id={post?.id}
+              onDelete={handleDeletePost}
+              onEdit={() => navigate(`/edit-post/${post?.id}`)}
+            />
+          )
+        })
         }
       </div>
     </div>
